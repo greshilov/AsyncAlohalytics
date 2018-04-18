@@ -2,7 +2,7 @@ import pyalohareciever
 import time
 import sys
 
-with open('../aloha_request1', 'rb') as f:
+with open('../etc/aloha_message', 'rb') as f:
     bt = f.read()
 
 try:
@@ -13,5 +13,4 @@ except RuntimeError:
 print(sys.getsizeof(events))
 
 for event in events:
-    #print(time.gmtime(event.timestamp / 1000))
-    print(event.key, '  ', event.value)
+    print(event.key, '  ', event.value, ' ', event.location, '  ', event.pairs)

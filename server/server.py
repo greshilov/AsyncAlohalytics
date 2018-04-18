@@ -8,12 +8,7 @@ from tornado.web import RequestHandler, Application
 from tornado.ioloop import IOLoop
 from tornado.httpserver import HTTPServer
 from db import add_aloha_event_command, get_aloha_events_command
-from utils import CONFIG
-
-
-access_log = logging.getLogger('tornado.access')
-app_log = logging.getLogger('tornado.application')
-gen_log = logging.getLogger('tornado.general')
+from utils import CONFIG, app_log
 
 
 class BaseHandler(RequestHandler):
@@ -66,7 +61,7 @@ if __name__ == '__main__':
     ioloop.start()
     future.result()
 
-    http_server = HTTPServer(application)
+    http_server = HTTPServer(application, decompress_request=True)
     http_server.listen(CONFIG['server']['port'], CONFIG['server']['host'])
 
     ioloop.start()

@@ -7,5 +7,9 @@ temp/*
 # Compiled Python
 *.pyc
 
+etc/config.yaml
+
 server/env
 server/pyalohareciever.so
+
+logs/*

@@ -1,10 +1,12 @@
 import psycopg2
+import json
 
 
 def create_tables():
     """ create tables in the PostgreSQL database"""
     commands = (
         """
+        DROP TYPE IF EXISTS PLATFORM_TYPE;
         CREATE TYPE PLATFORM_TYPE AS ENUM ('android', 'ios');
         
         CREATE TABLE events (
@@ -16,7 +18,8 @@ def create_tables():
             version VARCHAR(5) NOT NULL,
             key VARCHAR(255) NOT NULL,
             value VARCHAR(255),
-            location TEXT
+            location TEXT,
+            pairs JSON
         )
         """,)
     conn = None
@@ -51,12 +54,13 @@ def add_aloha_event_command(aloha_id, platform, bundle, version, events):
     _, aloha_id = aloha_id.split(':')
     for event in events:
         args = 'to_timestamp({})'.format(event.timestamp), \
-               *map(__escape, (aloha_id, platform, bundle, version, event.key, event.value, event.location))
+               *map(__escape, (aloha_id, platform, bundle, version, event.key,
+                               event.value, event.location, json.dumps(event.pairs))),
 
         values_list.append(__wrap(','.join(args)))
 
     values = ','.join(values_list)
-    return 'INSERT INTO events (timestamp, aloha_id, platform, bundle, version, key, value, location) ' \
+    return 'INSERT INTO events (timestamp, aloha_id, platform, bundle, version, key, value, location, pairs) ' \
            'VALUES {values}'.format(values=values)
 
 

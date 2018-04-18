@@ -5,11 +5,14 @@
 #include <iostream>
 
 #include <boost/python.hpp>
+#include <boost/python/suite/indexing/map_indexing_suite.hpp>
+
 #include <vector>
 
 namespace py = boost::python;
 using namespace alohalytics;
 
+typedef std::map<std::string, std::string> PairsMap;
 
 // Converts a C++ vector to a python list
 template <class T>
@@ -22,11 +25,23 @@ py::list ToPythonList(std::vector<T> vector) {
     return list;
 }
 
+// Converts a C++ map to a python dict
+template <class K, class V>
+py::dict ToPythonDict(std::map<K, V> map) {
+    typename std::map<K, V>::iterator iter;
+	boost::python::dict dictionary;
+	for (iter = map.begin(); iter != map.end(); ++iter) {
+		dictionary[iter->first] = iter->second;
+	}
+	return dictionary;
+}
+
 struct AlohaEvent {
   uint64_t timestamp;
   std::string key;
   std::string value;
   std::string location;
+  py::dict pairs;
 
   void flush() {
     this->timestamp = 0;
@@ -39,13 +54,20 @@ struct AlohaEvent {
     this->timestamp = event->timestamp / 1000;
     this->key = event->key;
     this->value = event->value;
-    this->location = event->location.Encode();
+    this->location = event->location.ToDebugString();
   }
 
   void load(AlohalyticsKeyLocationEvent const* event) {
     this->timestamp = event->timestamp / 1000;
     this->key = event->key;
-    this->location = event->location.Encode();
+    this->location = event->location.ToDebugString();
+  }
+
+  void load(AlohalyticsKeyPairsLocationEvent const* event) {
+    this->timestamp = event->timestamp / 1000;
+    this->key = event->key;
+    this->location = event->location.ToDebugString();
+    this->pairs = ToPythonDict(event->pairs);
   }
 
   void load(AlohalyticsKeyValueEvent const* event) {
@@ -102,6 +124,13 @@ py::tuple decode(std::string const& body)
         continue;
       }
 
+      AlohalyticsKeyPairsLocationEvent const * kpl_ev = dynamic_cast<AlohalyticsKeyPairsLocationEvent const *>(ptr.get());
+      if (kpl_ev) {
+        event.load(kpl_ev);
+        events.push_back(event);
+        continue;
+      }
+
       AlohalyticsKeyValueEvent const * kv_ev = dynamic_cast<const AlohalyticsKeyValueEvent *>(ptr.get());
       if (kv_ev) {
         event.load(kv_ev);
@@ -127,6 +156,7 @@ BOOST_PYTHON_MODULE(pyalohareciever)
       .add_property("key", &AlohaEvent::key)
       .add_property("value", &AlohaEvent::value)
       .add_property("location", &AlohaEvent::location)
+      .add_property("pairs", &AlohaEvent::pairs)
     ;
 
     def("decode", decode);

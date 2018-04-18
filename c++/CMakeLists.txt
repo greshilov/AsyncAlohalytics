@@ -3,13 +3,10 @@ cmake_minimum_required(VERSION 3.2)
 project(pyalohareciever C CXX)
 
 set(CMAKE_CXX_STANDART 11)
-
-if(APPLE)
-  set(CMAKE_CXX_FLAGS "-std=c++11")
-endif()
+set(CMAKE_CXX_FLAGS "-std=c++11")
 
 set(_Boost_PYTHON3_HEADERS "boost/python.hpp")
-find_package(Boost 1.64 REQUIRED COMPONENTS python3)
+find_package(Boost 1.58 REQUIRED COMPONENTS python3)
 find_package(PythonLibs ${PYTHON_VERSION} REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${PYTHON_INCLUDE_DIRS})
