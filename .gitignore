@@ -8,3 +8,4 @@ temp/*
 *.pyc
 
 server/env
+server/pyalohareciever.so

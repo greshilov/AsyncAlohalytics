@@ -1,0 +1,4 @@
+Momoko==2.2.4
+psycopg2==2.7.4
+PyYAML==3.12
+tornado==5.0.2
