@@ -1,3 +1,3 @@
 [submodule "c++/3party/Alohalytics"]
 	path = c++/3party/Alohalytics
-	url = git://github.com/mapsme/Alohalytics
+	url = https://github.com/mapsme/Alohalytics.git
