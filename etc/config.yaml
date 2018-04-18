@@ -1,0 +1,13 @@
+
+server:
+  host: localhost
+  port: 9999
+
+db:
+  host: localhost
+  name: postgres
+  user: python
+  password: python
+  port: 5432
+  workers: 1
+

@@ -1,0 +1,10 @@
+syntax: glob
+
+.DS_Store
+.idea
+temp/*
+
+# Compiled Python
+*.pyc
+
+server/env
