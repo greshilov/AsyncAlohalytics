@@ -61,8 +61,6 @@ if __name__ == '__main__':
 
     ioloop = IOLoop.instance()
 
-    print(STATIC_PATH)
-
     application.db = momoko.Pool(
         dsn='dbname={name} user={user} password={password} '
             'host={host} port={port}'.format(**CONFIG['db']),
