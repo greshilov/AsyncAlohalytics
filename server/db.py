@@ -50,7 +50,7 @@ def __wrap(event_str):
 
 
 def __escape(element):
-    return '\'{}\''.format(str(element).replace("'", "\\'"))
+    return '\'{}\''.format(str(element).replace("'", "''"))
 
 
 def __parse_location(location):
