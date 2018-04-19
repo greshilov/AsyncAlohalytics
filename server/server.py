@@ -56,7 +56,7 @@ if __name__ == '__main__':
     application = Application((
         (r'/(android|ios)/(\S+)/(\d+)', AlohaMessagesHandler),
         (r'/events/', FrontEndHandler),
-        (r'/(.*)', StaticFileHandler, {'path': STATIC_PATH, "default_filename": "index.html"}),
+        (r'/(.*)', StaticFileHandler, {'path': STATIC_PATH, 'default_filename': 'index.html'}),
     ))
 
     ioloop = IOLoop.instance()
