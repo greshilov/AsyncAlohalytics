@@ -42,12 +42,14 @@ struct AlohaEvent {
   std::string value;
   std::string location;
   py::dict pairs;
+  py::dict default_dict;
 
   void flush() {
     this->timestamp = 0;
     this->key = "";
     this->value = "";
     this->location = "";
+    this->pairs = default_dict;
   }
 
   void load(AlohalyticsKeyValueLocationEvent const* event) {

@@ -12,4 +12,8 @@ etc/config.yaml
 server/env
 server/pyalohareciever.so
 
+frontend/node_modules
+frontend/build
+frontend/dist
+
 logs/*

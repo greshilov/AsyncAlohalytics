@@ -3,12 +3,13 @@
 import momoko
 import pyalohareciever
 import logging
+import json
 
-from tornado.web import RequestHandler, Application
+from tornado.web import RequestHandler, Application, StaticFileHandler
 from tornado.ioloop import IOLoop
 from tornado.httpserver import HTTPServer
 from db import add_aloha_event_command, get_aloha_events_command
-from utils import CONFIG, app_log
+from utils import CONFIG, app_log, json_serial, STATIC_PATH
 
 
 class BaseHandler(RequestHandler):
@@ -35,15 +36,27 @@ class FrontEndHandler(BaseHandler):
         return self.application.db
 
     async def get(self):
-        cursor = await self.db.execute(get_aloha_events_command())
-        self.write("Results: %s" % cursor.fetchall())
+        aloha_id = self.get_argument('aloha_id', '', True)
+        key = self.get_argument('key', '', True)
+        value = self.get_argument('value', '', True)
+        limit = self.get_argument('limit', '', True)
+        timestamp = self.get_argument('timestamp', '', True)
+        cursor = await self.db.execute(get_aloha_events_command(aloha_id=aloha_id,
+                                                                key=key,
+                                                                value=value,
+                                                                timestamp=timestamp,
+                                                                limit=limit))
+        self.write(json.dumps(cursor.fetchall(), default=json_serial))
+        self.set_header('Content-Type', 'application/json')
+        self.set_header('Access-Control-Allow-Origin', '*')
         self.finish()
 
 
 if __name__ == '__main__':
     application = Application((
         (r'/(android|ios)/(\S+)/(\d+)', AlohaMessagesHandler),
-        (r'/', FrontEndHandler)
+        (r'/events/', FrontEndHandler),
+        (r'/(.*)', StaticFileHandler, {'path': STATIC_PATH, "default_filename": "index.html"}),
     ))
 
     ioloop = IOLoop.instance()
