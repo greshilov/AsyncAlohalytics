@@ -19,7 +19,7 @@ def create_tables():
             aloha_id VARCHAR(36) NOT NULL,
             platform PLATFORM_TYPE NOT NULL,
             bundle VARCHAR(255) NOT NULL,
-            version VARCHAR(5) NOT NULL,
+            version VARCHAR(8) NOT NULL,
             key VARCHAR(255) NOT NULL,
             value VARCHAR(255),
             location JSON,

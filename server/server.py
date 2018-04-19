@@ -54,12 +54,14 @@ class FrontEndHandler(BaseHandler):
 
 if __name__ == '__main__':
     application = Application((
-        (r'/(android|ios)/(\S+)/(\d+)', AlohaMessagesHandler),
+        (r'/(android|ios)/(\S+)/(\S+)', AlohaMessagesHandler),
         (r'/events/', FrontEndHandler),
         (r'/(.*)', StaticFileHandler, {'path': STATIC_PATH, 'default_filename': 'index.html'}),
     ))
 
     ioloop = IOLoop.instance()
+
+    print(STATIC_PATH)
 
     application.db = momoko.Pool(
         dsn='dbname={name} user={user} password={password} '

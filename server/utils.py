@@ -6,7 +6,7 @@ from logging.handlers import RotatingFileHandler
 from datetime import date, datetime
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-STATIC_PATH = os.path.join('frontend', 'dist')
+STATIC_PATH = os.path.join(ROOT, 'frontend', 'dist')
 CONFIG = yaml.load(open(os.path.join(ROOT, 'etc', 'config.yaml')))
 LOGGING_LEVEL = logging.DEBUG
 
