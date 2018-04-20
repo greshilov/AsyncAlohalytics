@@ -185,7 +185,6 @@ export default {
       + this.value + '&limit=' + this.limit + '&timestamp=' + this.timestamp
       + '&offset=' + this.currentPage * this.limit
       let url = SERVER_URL + '/events/' + params
-      console.log(this.currentPage);
       let promise = axios.get(url)
       return promise.then((response) => {
         const items = response.data.events.map(toObject);
