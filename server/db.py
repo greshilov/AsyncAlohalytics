@@ -2,6 +2,7 @@ import psycopg2
 import psycopg2.extensions
 import json
 import re
+import argparse
 
 from utils import CONFIG, app_log, MAX_LIMIT, DEFAULT_LIMIT
 
@@ -108,8 +109,8 @@ def get_aloha_events_command(aloha_id=None, key=None, value=None, timestamp=None
         where_keys.append(__to_regexp(value))
 
     if timestamp:
-        where_strings.append('offset = %s')
-        where_keys.append(offset)
+        where_strings.append('timestamp > NOW() - INTERVAL %s')
+        where_keys.append(timestamp)
 
     if where_keys:
         where = 'WHERE ' + ' AND '.join(where_strings)

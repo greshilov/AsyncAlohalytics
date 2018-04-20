@@ -71,8 +71,8 @@ class FrontEndHandler(BaseHandler):
         key = self.get_argument('key', '', True)
         value = self.get_argument('value', '', True)
         timestamp = self.get_argument('timestamp', '', True)
-        limit = self.get_argument('limit', 0, True)
-        offset = self.get_argument('offset', 0, True)
+        limit = self.get_argument('limit', '', True)
+        offset = self.get_argument('offset', '', True)
         cmd, c_cmd, args = get_aloha_events_command(aloha_id=aloha_id, key=key, value=value,
                                                     timestamp=timestamp, limit=limit, offset=offset)
 

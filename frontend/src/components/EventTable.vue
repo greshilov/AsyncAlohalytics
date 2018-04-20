@@ -46,7 +46,7 @@
     <!-- Limit and timestamp -->
     <b-row class="justify-content-right">
       <b-col md="4" class="my-1">
-        <b-form-group horizontal label="Older then" class="mb-3">
+        <b-form-group horizontal label="Newer than" class="mb-3">
           <b-input-group>
             <b-form-select v-model="timestamp" @change="updateTable">
               <option slot="default" :value="'30 minutes'">30 minutes</option>
@@ -207,10 +207,9 @@ div.fullscreen {
   width:100%;
   top: 0;
   left: 0;
-  z-index: 0;
 }
 
-.alert-fixed {
+.alert.alert-fixed {
   position: fixed;
   top: 5px;
   left:2%;
