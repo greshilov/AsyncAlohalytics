@@ -1,9 +1,30 @@
 import psycopg2
+import psycopg2.extensions
 import json
 import re
 
+from utils import CONFIG, app_log, MAX_LIMIT, DEFAULT_LIMIT
+
 LAT_RE = re.compile(r'lat=([+-]?([0-9]*[.])?[0-9]+)')
 LON_RE = re.compile(r'lon=([+-]?([0-9]*[.])?[0-9]+)')
+
+
+class db_connection:
+    def __init__(self):
+        self.connection = None
+        self.cursor = None
+
+    def __enter__(self):
+        # connect to the PostgreSQL server
+        self.connection = psycopg2.connect(**CONFIG['db'])
+        self.cursor = self.connection.cursor()
+        return self.cursor
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.cursor.close()
+        if exc_type is None:
+            self.connection.commit()
+        self.connection.close()
 
 
 def create_tables():
@@ -12,11 +33,11 @@ def create_tables():
         """
         DROP TYPE IF EXISTS PLATFORM_TYPE;
         CREATE TYPE PLATFORM_TYPE AS ENUM ('android', 'ios');
-        
+
         CREATE TABLE events (
             event_id SERIAL PRIMARY KEY,
             timestamp TIMESTAMP NOT NULL,
-            aloha_id VARCHAR(36) NOT NULL,
+            aloha_id VARCHAR(38) NOT NULL,
             platform PLATFORM_TYPE NOT NULL,
             bundle VARCHAR(255) NOT NULL,
             version VARCHAR(8) NOT NULL,
@@ -26,31 +47,25 @@ def create_tables():
             pairs JSON
         )
         """,)
-    conn = None
-    try:
-        # connect to the PostgreSQL server
-        conn = psycopg2.connect(host='localhost', user='python', password='python', dbname='postgres')
-        cur = conn.cursor()
-        # create table one by one
+
+    with db_connection() as cursor:
         for command in commands:
-            cur.execute(command)
-        # close communication with the PostgreSQL database server
-        cur.close()
-        # commit the changes
-        conn.commit()
-    except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
-    finally:
-        if conn is not None:
-            conn.close()
+            cursor.execute(command)
 
 
-def __wrap(event_str):
-    return '({})'.format(event_str)
+def drop_tables():
+    with db_connection() as cursor:
+        cursor.execute('DROP TABLE IF EXISTS events')
 
 
-def __escape(element):
-    return '\'{}\''.format(str(element).replace("'", "''"))
+def delete_old_events():
+    app_log.debug('Deleting old events...')
+    with db_connection() as cursor:
+        cursor.execute('DELETE FROM events WHERE timestamp > NOW() - INTERVAL %s', ('2 weeks', ))
+
+
+def __to_regexp(element):
+    return '%{}%'.format(str(element))
 
 
 def __parse_location(location):
@@ -59,51 +74,70 @@ def __parse_location(location):
     if lat_match and lon_match:
         lat, lon = lat_match.group(1), lon_match.group(1)
         if lat != 0 or lon != 0:
-            return __escape(json.dumps({'lat': lat, 'lon': lon}))
-    return '\'{}\''
+            return json.dumps({'lat': lat, 'lon': lon})
+    return '{}'
 
 
-def add_aloha_event_command(aloha_id, platform, bundle, version, events):
+async def add_aloha_event_command(cursor, aloha_id, platform, bundle, version, events):
     values_list = []
-    _, aloha_id = aloha_id.split(':')
     for event in events:
-        args = 'to_timestamp({})'.format(event.timestamp), \
-               __parse_location(event.location), \
-               *map(__escape, (aloha_id, platform, bundle, version, event.key,
-                               event.value, json.dumps(event.pairs))),
-
-        values_list.append(__wrap(','.join(args)))
+        value = await cursor.mogrify('(to_timestamp(%s), %s, %s, %s, %s, %s, %s, %s, %s)',
+                                     (event.timestamp, __parse_location(event.location), aloha_id, platform, bundle,
+                                      version, event.key, event.value, json.dumps(event.pairs)))
+        values_list.append(value.decode('utf8'))
 
     values = ','.join(values_list)
-    return 'INSERT INTO events (timestamp, location, aloha_id, platform, bundle, version, key, value, pairs) ' \
-           'VALUES {values}'.format(values=values)
+    query = 'INSERT INTO events (timestamp, location, aloha_id, platform, bundle, version, key, value, pairs) ' \
+            'VALUES {values}'.format(values=values)
+    await cursor.execute(query)
 
 
-def get_aloha_events_command(aloha_id=None, key=None, value=None, timestamp=None, limit=30):
+def get_aloha_events_command(aloha_id=None, key=None, value=None, timestamp=None, limit=30, offset=0):
     where_keys = []
+    where_strings = []
     where = ''
+
     if aloha_id:
-        where_keys.append('aloha_id LIKE \'%{aloha_id}%\''.format(aloha_id=aloha_id))
+        where_strings.append('aloha_id LIKE %s')
+        where_keys.append(__to_regexp(aloha_id))
     if key:
-        where_keys.append('key LIKE \'%{key}%\''.format(key=key))
+        where_strings.append('key LIKE %s')
+        where_keys.append(__to_regexp(key))
     if value:
-        where_keys.append('value LIKE \'%{value}%\''.format(value=value))
+        where_strings.append('value LIKE %s')
+        where_keys.append(__to_regexp(value))
+
     if timestamp:
-        where_keys.append('timestamp > NOW() - INTERVAL \'%{timestamp}%\''.format(timestamp=timestamp))
+        where_strings.append('offset = %s')
+        where_keys.append(offset)
 
     if where_keys:
-        where = 'WHERE ' + ' AND '.join(where_keys)
+        where = 'WHERE ' + ' AND '.join(where_strings)
 
     try:
         limit = int(limit)
-        if limit > 50:
-            limit = 50
+        if limit > MAX_LIMIT:
+            limit = MAX_LIMIT
     except ValueError:
-        limit = 30
+        limit = DEFAULT_LIMIT
 
-    return """SELECT event_id, aloha_id, platform, key, value, location, pairs, timestamp 
-              FROM events {where} ORDER BY event_id DESC LIMIT {limit}""".format(where=where, limit=limit)
+    try:
+        offset = int(offset)
+    except ValueError:
+        offset = 0
+
+    command = """
+        SELECT event_id, aloha_id, platform, key, value, location, pairs, timestamp
+        FROM events {where} ORDER BY event_id DESC LIMIT {limit} OFFSET {offset}
+        """.format(where=where, limit=limit, offset=offset)
+
+    count_command = """
+        SELECT COUNT(event_id) FROM events {where}
+        """.format(where=where)
+
+    return command, count_command, tuple(where_keys)
 
 
 if __name__ == '__main__':
+    drop_tables()
     create_tables()

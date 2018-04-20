@@ -1,6 +1,15 @@
 <template>
   <b-container fluid>
     <!-- Search filters -->
+    <!-- Alert -->
+    <b-container class="fullscreen">
+      <b-alert
+        :show="dismissCountdown"
+        ref="alert"
+        dismissible
+        variant="success"
+        class="alert-fixed">Statistic recieved!</b-alert>
+    </b-container>
     <b-row>
       <b-col md="4" class="my-1">
         <b-form-group horizontal label="Aloha Id" class="mb-3">
@@ -56,6 +65,7 @@
               <option :value="10">10</option>
               <option :value="30">30</option>
               <option :value="50">50</option>
+              <option :value="100">100</option>
             </b-form-select>
           </b-input-group>
         </b-form-group>
@@ -80,6 +90,9 @@
         </b-list-group>
       </template>
     </b-table>
+    <b-row class="mb-3 justify-content-md-center">
+      <b-pagination align="center" :total-rows="totalRows" :per-page="limit" v-model="currentPage" class="my-0" @input="reloadTable" />
+    </b-row>
   </b-container>
 </template>
 
@@ -87,7 +100,7 @@
 import axios from 'axios';
 
 const headers = [ 'event_id', 'aloha_id', 'platform', 'key', 'value', 'location', 'pairs', 'timestamp' ]
-const SERVER_URL = "http://localhost:9999"
+const SERVER_URL = "http://0.0.0.0:9999"
 
 function toObject(event) {
   var obj = {};
@@ -105,15 +118,17 @@ export default {
       value: "",
       timestamp: "",
       limit: 30,
-      isBusy: false
+      isBusy: false,
+      currentPage: 1,
+      totalRows: 0,
+      dismissCountdown: 0,
+      dismissSeconds: 2
     }
   },
 
   mounted() {
     this.maxId = 0;
-    this.needToUpdate = false;
     setInterval(function () {
-      this.eventProvider();
       this.refresh();
     }.bind(this), 3000);
   },
@@ -129,34 +144,52 @@ export default {
   },
 
   methods: {
-     refresh (ctx) {
-       if (this.needToUpdate) {
+     async refresh (ctx) {
+       const newMaxId = await this.getMaxId();
+       if (newMaxId > this.maxId) {
+         this.maxId = newMaxId;
+         this.eventProvider(ctx);
          this.$refs.table.refresh();
-         this.needToUpdate = false;
+         this.dismissCountdown = this.dismissSeconds;
+         this.$refs.alert.showChanged();
        }
+     },
+
+     reloadTable (ctx) {
+       this.eventProvider(ctx);
+       this.$refs.table.refresh();
      },
 
      updateTable (ctx) {
        // Update only after timeout
        clearTimeout(this.timeout);
        this.timeout = setTimeout( () => {
-         this.eventProvider(ctx);
-         this.$refs.table.refresh();
+         this.reloadTable()
+         this.currentPage = 1;
        }, 350);
      },
+
+     getMaxId (ctx) {
+       let url = SERVER_URL + '/events/max/'
+       let promise = axios.get(url)
+       return promise.then((response) => {
+         return Number(response.data)
+       }).catch(error => {
+         console.log(error);
+         return 0
+       })
+     },
+
      eventProvider (ctx) {
       let params = '?aloha_id=' + this.alohaId + '&key=' + this.key + '&value='
       + this.value + '&limit=' + this.limit + '&timestamp=' + this.timestamp
+      + '&offset=' + this.currentPage * this.limit
       let url = SERVER_URL + '/events/' + params
+      console.log(this.currentPage);
       let promise = axios.get(url)
-
       return promise.then((response) => {
-        const items = response.data.map(toObject);
-        var maxId = Math.max.apply(Math,items.map(function(o){return Number(o.event_id);}));
-        if (maxId > this.maxId) {
-          this.maxId = maxId;
-          this.needToUpdate = true;
-        }
+        const items = response.data.events.map(toObject);
+        this.totalRows = Number(response.data.count);
         return (items || [])
       }).catch(error => {
         console.log(error);
@@ -166,3 +199,23 @@ export default {
   }
 }
 </script>
+
+
+<style>
+
+div.fullscreen {
+  position: absolute;
+  width:100%;
+  top: 0;
+  left: 0;
+  z-index: 0;
+}
+
+.alert-fixed {
+  position: fixed;
+  top: 5px;
+  left:2%;
+  width: 100%;
+  z-index: 1000;
+}
+</style>
