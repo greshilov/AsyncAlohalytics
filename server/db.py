@@ -102,10 +102,10 @@ def get_aloha_events_command(aloha_id=None, key=None, value=None, timestamp=None
         where_strings.append('aloha_id LIKE %s')
         where_keys.append(__to_regexp(aloha_id))
     if key:
-        where_strings.append('key LIKE %s')
+        where_strings.append('key ILIKE %s')
         where_keys.append(__to_regexp(key))
     if value:
-        where_strings.append('value LIKE %s')
+        where_strings.append('value ILIKE %s')
         where_keys.append(__to_regexp(value))
 
     if timestamp:
