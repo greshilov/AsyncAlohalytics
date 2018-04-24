@@ -183,7 +183,7 @@ export default {
      eventProvider (ctx) {
       let params = '?aloha_id=' + this.alohaId + '&key=' + this.key + '&value='
       + this.value + '&limit=' + this.limit + '&timestamp=' + this.timestamp
-      + '&offset=' + this.currentPage * this.limit
+      + '&offset=' + this.currentPage * (this.limit - 1)
       let url = SERVER_URL + '/events/' + params
       let promise = axios.get(url)
       return promise.then((response) => {
