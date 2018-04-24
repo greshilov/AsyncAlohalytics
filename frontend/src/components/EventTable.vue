@@ -100,7 +100,6 @@
 import axios from 'axios';
 
 const headers = [ 'event_id', 'aloha_id', 'platform', 'key', 'value', 'location', 'pairs', 'timestamp' ]
-const SERVER_URL = "http://0.0.0.0:9999"
 
 function toObject(event) {
   var obj = {};
@@ -170,7 +169,7 @@ export default {
      },
 
      getMaxId (ctx) {
-       let url = SERVER_URL + '/events/max/'
+       let url = '/events/max/'
        let promise = axios.get(url)
        return promise.then((response) => {
          return Number(response.data)
@@ -184,7 +183,7 @@ export default {
       let params = '?aloha_id=' + this.alohaId + '&key=' + this.key + '&value='
       + this.value + '&limit=' + this.limit + '&timestamp=' + this.timestamp
       + '&offset=' + this.currentPage * (this.limit - 1)
-      let url = SERVER_URL + '/events/' + params
+      let url = '/events/' + params
       let promise = axios.get(url)
       return promise.then((response) => {
         const items = response.data.events.map(toObject);
