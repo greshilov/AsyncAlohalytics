@@ -78,6 +78,12 @@ struct AlohaEvent {
     this->value = event->value;
   }
 
+  void load(AlohalyticsKeyPairsEvent const* event) {
+    this->timestamp = event->timestamp / 1000;
+    this->key = event->key;
+    this->pairs = ToPythonDict(event->pairs);
+  }
+
   void load(AlohalyticsKeyEvent const* event) {
     this->timestamp = event->timestamp / 1000;
     this->key = event->key;
@@ -139,6 +145,14 @@ py::tuple decode(std::string const& body)
         events.push_back(event);
         continue;
       }
+
+      AlohalyticsKeyPairsEvent const * kp_ev = dynamic_cast<const AlohalyticsKeyPairsEvent *>(ptr.get());
+      if (kv_ev) {
+        event.load(kp_ev);
+        events.push_back(event);
+        continue;
+      }
+
       AlohalyticsKeyEvent const * k_ev = dynamic_cast<const AlohalyticsKeyEvent *>(ptr.get());
       if (k_ev) {
         event.load(k_ev);
