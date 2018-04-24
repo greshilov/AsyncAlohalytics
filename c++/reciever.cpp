@@ -81,6 +81,7 @@ struct AlohaEvent {
   void load(AlohalyticsKeyPairsEvent const* event) {
     this->timestamp = event->timestamp / 1000;
     this->key = event->key;
+    this->value = event->value;
     this->pairs = ToPythonDict(event->pairs);
   }
 
