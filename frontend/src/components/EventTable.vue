@@ -130,7 +130,7 @@ export default {
   mounted() {
     this.maxId = 0;
     setInterval(function () {
-      //this.refresh();
+      this.refresh();
     }.bind(this), 3000);
   },
 
