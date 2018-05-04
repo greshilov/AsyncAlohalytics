@@ -1,5 +1,6 @@
 <template>
   <b-container fluid>
+    <b-modal ref="pill" hide-footer title="Value is:"><h4> {{pillMessage}}</h4></b-modal>
     <!-- Search filters -->
     <!-- Alert -->
     <b-container class="fullscreen">
@@ -77,7 +78,7 @@
         <b-list-group v-for="value, key in data.value" class="mb-1">
           <b-list-group-item class="d-flex justify-content-between align-items-center">
               {{key}}
-              <b-badge variant="primary" pill>{{value | trim }}</b-badge>
+              <b-badge variant="primary" pill @click="showPill">{{value | trim }}</b-badge>
           </b-list-group-item>
         </b-list-group>
       </template>
@@ -121,14 +122,15 @@ export default {
       currentPage: 1,
       totalRows: 0,
       dismissCountdown: 0,
-      dismissSeconds: 2
+      dismissSeconds: 2,
+      pillMessage: ""
     }
   },
 
   mounted() {
     this.maxId = 0;
     setInterval(function () {
-      this.refresh();
+      //this.refresh();
     }.bind(this), 3000);
   },
 
@@ -194,6 +196,11 @@ export default {
         return []
       })
     },
+
+    showPill (ctx) {
+      this.pillMessage = ctx.toElement.outerText;
+      this.$refs.pill.show();
+    }
   }
 }
 </script>
@@ -215,4 +222,12 @@ div.fullscreen {
   width: 100%;
   z-index: 1000;
 }
+
+#app .badge-pill {
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100px;
+}
+
 </style>
