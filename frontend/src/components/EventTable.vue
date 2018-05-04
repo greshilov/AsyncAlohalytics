@@ -210,7 +210,7 @@ export default {
 
 div.fullscreen {
   position: absolute;
-  width:100%;
+  width: 96%;
   top: 0;
   left: 0;
 }
@@ -228,6 +228,7 @@ div.fullscreen {
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100px;
+  cursor: pointer;
 }
 
 </style>
