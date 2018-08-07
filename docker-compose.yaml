@@ -9,6 +9,7 @@ services:
       - 5432
 
   async-aloha:
+    restart: always
     image: 'async-aloha:latest'
     env_file:
         - etc/config.env
