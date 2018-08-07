@@ -1,5 +1,5 @@
-# How to
+## How to
 ```
-bin/build_image.sh
+bin/build_container.sh
 docker-compose up -d
 ```
