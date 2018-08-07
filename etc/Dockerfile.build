@@ -1,0 +1,31 @@
+FROM        ubuntu:18.04
+MAINTAINER  Slavik Greshilov
+
+#   --  Image to build --
+#       pyalohareciever
+
+RUN rm -rf /var/lib/apt/lists/* && \
+    apt-get update && \
+    apt-get dist-upgrade -y
+
+COPY ./c++ /build
+COPY ./frontend /build-frontend
+
+RUN apt-get install -y \
+    bash \
+    cmake \
+    libboost-all-dev \
+    libboost-python-dev \
+    ninja-build \
+    npm
+
+# Build pyalohareciever
+
+RUN cd tmp && \
+    cmake /build -G Ninja && \
+    ninja
+
+# Build frontend
+
+RUN cd /build-frontend && \
+    npm install && npm run build
